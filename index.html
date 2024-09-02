@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Color Picker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .color-picker {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #color-display {
+            width: 200px;
+            height: 100px;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+        }
+        .slider-container {
+            margin: 10px 0;
+        }
+        .slider-container label {
+            display: inline-block;
+            width: 20px;
+        }
+        input[type="range"] {
+            width: 200px;
+        }
+        #saved-colors {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .saved-color {
+            width: 30px;
+            height: 30px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .triadic-colors {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .triadic-color {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ddd;
+        }
+        .color-wheel {
+            margin-top: 20px;
+            text-align: center;
+        }
+        svg {
+            max-width: 200px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="color-picker">
+        <h1>Advanced Color Picker</h1>
+        <div id="color-display"></div>
+        <p>Selected color: <span id="color-value">#000000</span></p>
+        <div class="slider-container">
+            <label>H:</label>
+            <input type="range" id="hue" min="0" max="360" value="0">
+            <span id="hue-value">0</span>
+        </div>
+        <div class="slider-container">
+            <label>S:</label>
+            <input type="range" id="saturation" min="0" max="100" value="100">
+            <span id="saturation-value">100%</span>
+        </div>
+        <div class="slider-container">
+            <label>V:</label>
+            <input type="range" id="value" min="0" max="100" value="100">
+            <span id="value-value">100%</span>
+        </div>
+        <button id="save-color">Save Color</button>
+        <div id="saved-colors"></div>
+        <div class="triadic-colors">
+            <div>
+                <h3>Triadic Color 1</h3>
+                <div id="triadic-color-1" class="triadic-color"></div>
+            </div>
+            <div>
+                <h3>Triadic Color 2</h3>
+                <div id="triadic-color-2" class="triadic-color"></div>
+            </div>
+        </div>
+        <div class="color-wheel">
+            <h3>Color Wheel</h3>
+            <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#ccc" stroke-width="2"/>
+                <path id="color-segment-1" d="M50,50 L90,50 A40,40 0 0,1 25,85.98 Z" />
+                <path id="color-segment-2" d="M50,50 L25,85.98 A40,40 0 0,1 25,14.02 Z" />
+                <path id="color-segment-3" d="M50,50 L25,14.02 A40,40 0 0,1 90,50 Z" />
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const colorDisplay = document.getElementById('color-display');
+            const colorValue = document.getElementById('color-value');
+            const hueSlider = document.getElementById('hue');
+            const saturationSlider = document.getElementById('saturation');
+            const valueSlider = document.getElementById('value');
+            const hueValue = document.getElementById('hue-value');
+            const saturationValue = document.getElementById('saturation-value');
+            const valueValue = document.getElementById('value-value');
+            const saveColorBtn = document.getElementById('save-color');
+            const savedColorsContainer = document.getElementById('saved-colors');
+
+            const triadicColor1 = document.getElementById('triadic-color-1');
+            const triadicColor2 = document.getElementById('triadic-color-2');
+
+            const colorSegment1 = document.getElementById('color-segment-1');
+            const colorSegment2 = document.getElementById('color-segment-2');
+            const colorSegment3 = document.getElementById('color-segment-3');
+
+            function updateColor() {
+                const h = hueSlider.value;
+                const s = saturationSlider.value;
+                const v = valueSlider.value;
+                const color = HSVtoRGB(h, s, v);
+                colorDisplay.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+                colorValue.textContent = RGBtoHex(color.r, color.g, color.b);
+                hueValue.textContent = h;
+                saturationValue.textContent = s + '%';
+                valueValue.textContent = v + '%';
+            }
+
+            function HSVtoRGB(h, s, v) {
+                let r, g, b;
+                h = h / 360;
+                s = s / 100;
+                v = v / 100;
+                if (s === 0) {
+                    r = g = b = v;
+                } else {
+                    let i = Math.floor(h * 6);
+                    let f = h * 6 - i;
+                    let p = v * (1 - s);
+                    let q = v * (1 - f * s);
+                    let t = v * (1 - (1 - f) * s);
+                    switch (i % 6) {
+                        case 0: r = v, g = t, b = p; break;
+                        case 1: r = q, g = v, b = p; break;
+                        case 2: r = p, g = v, b = t; break;
+                        case 3: r = p, g = q, b = v; break;
+                        case 4: r = t, g = p, b = v; break;
+                        case 5: r = v, g = p, b = q; break;
+                    }
+                }
+                return {
+                    r: Math.round(r * 255),
+                    g: Math.round(g * 255),
+                    b: Math.round(b * 255)
+                };
+            }
+
+            function RGBtoHex(r, g, b) {
+                return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            }
+
+            function updateColorWheel(color1, color2, color3) {
+                colorSegment1.setAttribute('fill', color1);
+                colorSegment2.setAttribute('fill', color2);
+                colorSegment3.setAttribute('fill', color3);
+            }
+
+            function updateTriadicColors() {
+                const h = parseInt(hueSlider.value);
+                const s = parseInt(saturationSlider.value);
+                const v = parseInt(valueSlider.value);
+
+                // Calculate the other two hues in the triadic scheme
+                const hue1 = (h + 120) % 360;
+                const hue2 = (h + 240) % 360;
+
+                // Convert to RGB and then to Hex
+                const color1 = HSVtoRGB(h, s, v);
+                const color2 = HSVtoRGB(hue1, s, v);
+                const color3 = HSVtoRGB(hue2, s, v);
+
+                const hex1 = RGBtoHex(color1.r, color1.g, color1.b);
+                const hex2 = RGBtoHex(color2.r, color2.g, color2.b);
+                const hex3 = RGBtoHex(color3.r, color3.g, color3.b);
+
+                // Update the display
+                colorDisplay.style.backgroundColor = hex1;
+                triadicColor1.style.backgroundColor = hex2;
+                triadicColor2.style.backgroundColor = hex3;
+
+                // Update the color wheel
+                updateColorWheel(hex1, hex2, hex3);
+            }
+
+            hueSlider.addEventListener('input', updateTriadicColors);
+            saturationSlider.addEventListener('input', updateTriadicColors);
+            valueSlider.addEventListener('input', updateTriadicColors);
+
+            saveColorBtn.addEventListener('click', function() {
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'saved-color';
+                colorDiv.style.backgroundColor = colorDisplay.style.backgroundColor;
+                colorDiv.title = colorValue.textContent;
+                colorDiv.addEventListener('click', function() {
+                    const rgb = this.style.backgroundColor.match(/\d+/g);
+                    const hex = RGBtoHex(parseInt(rgb[0]), parseInt(rgb[1]), parseInt(rgb[2]));
+                    colorDisplay.style.backgroundColor = hex;
+                    colorValue.textContent = hex;
+                });
+                savedColorsContainer.appendChild(colorDiv);
+            });
+
+            updateTriadicColors();
+        });
+    </script>
+</body>
+</html>
