@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Color Picker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+        }
+        #colorWheel {
+            cursor: crosshair;
+        }
+        #rgbValue {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .sliders {
+            margin-top: 20px;
+        }
+        .slider-container {
+            margin-bottom: 10px;
+        }
+        label {
+            display: inline-block;
+            width: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="colorWheel" width="300" height="300"></canvas>
+        <div id="rgbValue">RGB: 255, 0, 0</div>
+        <div class="sliders">
+            <div class="slider-container">
+                <label for="hue">H:</label>
+                <input type="range" id="hue" min="0" max="360" value="0">
+            </div>
+            <div class="slider-container">
+                <label for="saturation">S:</label>
+                <input type="range" id="saturation" min="0" max="100" value="100">
+            </div>
+            <div class="slider-container">
+                <label for="value">V:</label>
+                <input type="range" id="value" min="0" max="100" value="100">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('colorWheel');
+        const ctx = canvas.getContext('2d');
+        const rgbValue = document.getElementById('rgbValue');
+        const hueSlider = document.getElementById('hue');
+        const saturationSlider = document.getElementById('saturation');
+        const valueSlider = document.getElementById('value');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = Math.min(centerX, centerY) - 5;
+
+        let isDragging = false;
+        let currentColor = { r: 255, g: 0, b: 0 };
+        let selectedX = centerX + radius;
+        let selectedY = centerY;
+
+        const offScreenCanvas = document.createElement('canvas');
+        offScreenCanvas.width = canvas.width;
+        offScreenCanvas.height = canvas.height;
+        const offScreenCtx = offScreenCanvas.getContext('2d');
+
+        function drawColorWheel() {
+            const hueOffset = parseInt(hueSlider.value);
+            const saturation = parseInt(saturationSlider.value) / 100;
+            const value = parseInt(valueSlider.value) / 100;
+
+            for (let x = 0; x < offScreenCanvas.width; x++) {
+                for (let y = 0; y < offScreenCanvas.height; y++) {
+                    const dx = x - centerX;
+                    const dy = y - centerY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= radius) {
+                        let hue = (Math.atan2(dy, dx) + Math.PI) / (2 * Math.PI);
+                        hue = (hue + hueOffset / 360) % 1;
+                        const s = distance / radius * saturation;
+                        const rgb = HSVtoRGB(hue, s, value);
+                        offScreenCtx.fillStyle = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+                        offScreenCtx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+
+            ctx.drawImage(offScreenCanvas, 0, 0);
+            drawSelector(selectedX, selectedY);
+        }
+
+        function HSVtoRGB(h, s, v) {
+            let r, g, b;
+            const i = Math.floor(h * 6);
+            const f = h * 6 - i;
+            const p = v * (1 - s);
+            const q = v * (1 - f * s);
+            const t = v * (1 - (1 - f) * s);
+
+            switch (i % 6) {
+                case 0: r = v; g = t; b = p; break;
+                case 1: r = q; g = v; b = p; break;
+                case 2: r = p; g = v; b = t; break;
+                case 3: r = p; g = q; b = v; break;
+                case 4: r = t; g = p; b = v; break;
+                case 5: r = v; g = p; b = q; break;
+            }
+
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        function drawSelector(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
+        }
+
+        function updateColor(x, y) {
+            const dx = x - centerX;
+            const dy = y - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= radius) {
+                selectedX = x;
+                selectedY = y;
+                updateRGBFromPosition();
+                drawColorWheel();
+            }
+        }
+
+        function updateRGBFromPosition() {
+            const imageData = offScreenCtx.getImageData(selectedX, selectedY, 1, 1);
+            currentColor = {
+                r: imageData.data[0],
+                g: imageData.data[1],
+                b: imageData.data[2]
+            };
+            updateRGBDisplay();
+        }
+
+        function updateRGBDisplay() {
+            rgbValue.textContent = `RGB: ${currentColor.r}, ${currentColor.g}, ${currentColor.b}`;
+        }
+
+        function resetSelectorToCurrentPosition() {
+            const dx = selectedX - centerX;
+            const dy = selectedY - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+
+            const hue = parseInt(hueSlider.value) / 360;
+            const saturation = distance / radius;
+            const value = parseInt(valueSlider.value) / 100;
+
+            const rgb = HSVtoRGB(hue, saturation, value);
+            currentColor = rgb;
+            updateRGBDisplay();
+
+            drawColorWheel();
+            drawSelector(selectedX, selectedY);
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateColor(e.offsetX, e.offsetY);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                updateColor(e.offsetX, e.offsetY);
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+
+        hueSlider.addEventListener('input', () => {
+            resetSelectorToCurrentPosition();
+        });
+
+        saturationSlider.addEventListener('input', () => {
+            resetSelectorToCurrentPosition();
+        });
+
+        valueSlider.addEventListener('input', () => {
+            resetSelectorToCurrentPosition();
+        });
+
+        // Initial draw
+        drawColorWheel();
+        updateColor(selectedX, selectedY); // Start with red (hue 0)
+    </script>
+</body>
+</html>
