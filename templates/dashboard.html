@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Audio Analysis Dashboard</title>
+</head>
+<body>
+    <h1>Track Audio Analysis Dashboard</h1>
+    
+    <h2>Recommendations</h2>
+    <div id="recommendations">
+        {% if recommendations %}
+            <ul>
+            {% for track in recommendations %}
+                <li>
+                    {{ track.name }} by {{ track.artists|map(attribute='name')|join(', ') }}
+                    <button onclick="displayTrackAudioAnalysis('{{ track.id }}')">Analyze</button>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>No recommendations available.</p>
+        {% endif %}
+    </div>
+
+    <h2>Audio Analysis</h2>
+    <div id="dashboard"></div>
+
+    <script>
+        async function fetchTrackAudioAnalysis(trackId) {
+            const response = await fetch(`/track-audio-analysis/${trackId}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        }
+
+        function formatDuration(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function createAnalysisDisplay(data) {
+            const relevantData = {
+                duration: formatDuration(data.track.duration),
+                tempo: `${Math.round(data.track.tempo)} BPM`,
+                timeSignature: `${data.track.time_signature}/4`,
+                key: ['C', 'C♯/D♭', 'D', 'D♯/E♭', 'E', 'F', 'F♯/G♭', 'G', 'G♯/A♭', 'A', 'A♯/B♭', 'B'][data.track.key],
+                mode: data.track.mode === 1 ? 'Major' : 'Minor',
+                loudness: `${Math.round(data.track.loudness)} dB`,
+                sections: data.sections.length,
+                segments: data.segments.length,
+            };
+
+            return `
+                <div class="analysis-container">
+                    <h3>Track Analysis</h3>
+                    <div class="analysis-grid">
+                        ${Object.entries(relevantData).map(([key, value]) => `
+                            <div class="analysis-item">
+                                <span class="analysis-label">${key.charAt(0).toUpperCase() + key.slice(1)}:</span>
+                                <span class="analysis-value">${value}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function displayTrackAudioAnalysis(trackId) {
+            try {
+                const data = await fetchTrackAudioAnalysis(trackId);
+                const dashboard = document.getElementById('dashboard');
+                dashboard.innerHTML = createAnalysisDisplay(data);
+            } catch (error) {
+                console.error('Error:', error);
+                const dashboard = document.getElementById('dashboard');
+                dashboard.innerHTML = `<p class="error">Error fetching audio analysis: ${error.message}</p>`;
+            }
+        }
+    </script>
+
+    <style>
+        .analysis-container {
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .analysis-item {
+            background-color: white;
+            border-radius: 4px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .analysis-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .analysis-value {
+            color: #666;
+            margin-left: 5px;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</body>
+</html>

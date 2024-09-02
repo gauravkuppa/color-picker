@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Personalized Recommendations</title>
+</head>
+<body>
+    <h1>Get Personalized Recommendations</h1>
+    <form action="/recommend" method="post">
+        <label for="genre">Genre:</label>
+        <input type="text" id="genre" name="genre" required><br><br>
+
+        <label for="energy">Energy (0-1):</label>
+        <input type="number" id="energy" name="energy" min="0" max="1" step="0.1" required><br><br>
+
+        <label for="danceability">Danceability (0-1):</label>
+        <input type="number" id="danceability" name="danceability" min="0" max="1" step="0.1" required><br><br>
+
+        <label for="valence">Positivity (0-1):</label>
+        <input type="number" id="valence" name="valence" min="0" max="1" step="0.1" required><br><br>
+
+        <label for="acousticness">Acousticness (0-1):</label>
+        <input type="number" id="acousticness" name="acousticness" min="0" max="1" step="0.1" required><br><br>
+
+        <label for="instrumentalness">Instrumentalness (0-1):</label>
+        <input type="number" id="instrumentalness" name="instrumentalness" min="0" max="1" step="0.1" required><br><br>
+
+        <label for="popularity">Popularity (0-100):</label>
+        <input type="number" id="popularity" name="popularity" min="0" max="100" required><br><br>
+
+        <label for="tempo">Tempo (BPM):</label>
+        <input type="number" id="tempo" name="tempo" min="0" required><br><br>
+
+        <input type="submit" value="Get Recommendations">
+    </form>
+</body>
+</html>
